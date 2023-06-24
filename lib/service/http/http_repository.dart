@@ -4,23 +4,37 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:logger/logger.dart';
+import 'package:nas_photo_viewer/data/shared_preference/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 
 class HttpRepository {
   late PersistCookieJar _cookieJar;
-  late String _nasUrl;
+  String? _nasUrl;
   final List<Cookie> _cookies = [];
   final Dio _dio = Dio();
 
   HttpRepository();
 
+  Future<void> init() async {
+    // Directory appDocDir = await getApplicationDocumentsDirectory();
+    // String appDocPath = appDocDir.path;
+    // _cookieJar =
+    // PersistCookieJar(storage: FileStorage('$appDocPath/.cookies/'));
+    _nasUrl ??= await SharedPreference.getString(key: "nasUrl");
+  }
+
   Future<void> setNasUrl(String url) async {
     _nasUrl = url;
+    await SharedPreference.setString(key: "nasUrl", value: url);
     await setCookieInfo();
   }
 
   String getNasUrl() {
-    return _nasUrl;
+    return _nasUrl ?? '';
+  }
+
+  Map<String, Map<String, Map<String, SerializableCookie>>> getCookies() {
+    return _cookieJar.hostCookies;
   }
 
   Future<void> setCookieInfo() async {
@@ -29,12 +43,13 @@ class HttpRepository {
     String appDocPath = appDocDir.path;
     _cookieJar =
         PersistCookieJar(storage: FileStorage('$appDocPath/.cookies/'));
-    _cookieJar.saveFromResponse(Uri.parse(_nasUrl), _cookies);
+    Logger().d('save from response: ${_cookies.toString()}');
+    _cookieJar.saveFromResponse(Uri.parse(getNasUrl()), _cookies);
     _dio.interceptors.add(CookieManager(_cookieJar));
   }
 
   Future<void> printCookieInfo() async {
-    Logger().d(await _cookieJar.loadForRequest(Uri.parse(_nasUrl)));
+    Logger().d(await _cookieJar.loadForRequest(Uri.parse(getNasUrl())));
   }
 
   Future<Response> get(String url) async {

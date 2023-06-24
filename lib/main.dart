@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nas_photo_viewer/data/secure_storage/secure_storage.dart';
+import 'package:nas_photo_viewer/model/nas_file.dart';
 import 'package:nas_photo_viewer/service/certification/certification_repository.dart';
 import 'package:nas_photo_viewer/service/http/http_repository.dart';
+import 'package:nas_photo_viewer/view/image_detail/image_detail.dart';
 import 'package:nas_photo_viewer/view/root/root_bloc.dart';
 import 'package:nas_photo_viewer/view/root/root_page.dart';
 import 'package:nas_photo_viewer/view/settings/settings_bloc.dart';
@@ -10,21 +12,32 @@ import 'package:nas_photo_viewer/view/settings/settings_page.dart';
 import 'package:nas_photo_viewer/view/viewer/viewer_bloc.dart';
 import 'package:nas_photo_viewer/view/viewer/viewer_page.dart';
 
-void main() {
-  runApp(const ProviderScope(child: App()));
+void main() async {
+  final secureStorage = SecureStorage();
+  final certificationRepository = CertificationRepository(secureStorage);
+  final httpRepository = HttpRepository();
+  runApp(ProviderScope(
+    child: App(
+      secureStorage: secureStorage,
+      certificationRepository: certificationRepository,
+      httpRepository: httpRepository,
+    ),
+  ));
 }
 
 class App extends StatelessWidget {
-  const App({super.key});
+  final SecureStorage secureStorage;
+  final CertificationRepository certificationRepository;
+  final HttpRepository httpRepository;
+  const App(
+      {super.key,
+      required this.secureStorage,
+      required this.certificationRepository,
+      required this.httpRepository});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    SecureStorage secureStorage = SecureStorage();
-    CertificationRepository certificationRepository =
-        CertificationRepository(secureStorage);
-    HttpRepository httpRepository = HttpRepository();
-
     return MaterialApp(
       title: 'NAS Photo Viewer',
       theme: ThemeData.light(useMaterial3: true),
@@ -53,7 +66,19 @@ class App extends StatelessWidget {
           return ViewerPage(
             viewerPageBloc: viewerPageBloc,
           );
-        }
+        },
+        ImageDetailPage.routeName: (BuildContext context) {
+          final arg = ModalRoute.of(context)!.settings.arguments;
+          final map = (arg ?? {}) as Map<String, dynamic>;
+          final index = (map['index'] ?? 0) as int;
+          final nasfiles = (map['nasfiles'] ?? []) as List<NasFile>;
+          final urlBase = (map['urlBase'] ?? '') as String;
+          return ImageDetailPage(
+            index: index,
+            nasfiles: nasfiles,
+            urlBase: urlBase,
+          );
+        },
       },
     );
   }

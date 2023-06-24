@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nas_photo_viewer/model/nas_file.dart';
 import 'package:nas_photo_viewer/usecase/nas_files_state.dart';
+import 'package:nas_photo_viewer/view/image_detail/image_detail.dart';
 import 'package:nas_photo_viewer/view/viewer/viewer_bloc.dart';
 
 class ViewerPage extends ConsumerStatefulWidget {
@@ -41,12 +43,75 @@ class ViewerPageState extends ConsumerState<ViewerPage> {
       appBar: null,
       body: CustomScrollView(
         slivers: [
-          const SliverAppBar(
-            title: Text('Photo'),
+          SliverAppBar(
+            title: Text(widget.viewerPageBloc.path),
           ),
-          SliverList(
+          SliverGrid(
+            // gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            //   crossAxisCount: 2,
+            //   mainAxisSpacing: 5,
+            //   crossAxisSpacing: 5,
+            //   childAspectRatio: 1.2,
+            // ),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 200,
+              mainAxisSpacing: 3,
+              crossAxisSpacing: 5,
+              childAspectRatio: 1.2,
+            ),
             delegate: SliverChildBuilderDelegate(
-              (context, index) => Text(nasfiles[index].name),
+              (context, index) {
+                final nasfile = nasfiles[index];
+                Widget content;
+                if (nasfile.directory) {
+                  content = Card(
+                    margin: const EdgeInsets.all(8.0),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pushNamed(ViewerPage.routeName,
+                            arguments: nasfile.path);
+                      },
+                      borderRadius: BorderRadius.circular(18.0),
+                      child: Column(
+                        children: [
+                          const Expanded(
+                            // width: 400
+                            child: Icon(
+                              Icons.folder,
+                              size: 100,
+                            ),
+                          ),
+                          Text(nasfile.name),
+                        ],
+                      ),
+                    ),
+                  );
+                } else {
+                  final url = '${widget.viewerPageBloc.getNasUrl()}rpc/cat';
+                  final cookie = widget.viewerPageBloc.getNasCookie();
+                  content = InkWell(
+                    onTap: () {
+                      Navigator.of(context).pushNamed(
+                        ImageDetailPage.routeName,
+                        arguments: {
+                          'index': index,
+                          'nasfiles': nasfiles,
+                          'urlBase': url,
+                        },
+                      );
+                    },
+                    child: CachedNetworkImage(
+                      imageUrl: '$url${nasfiles[index].path}',
+                      httpHeaders: {
+                        'Cookie': cookie,
+                      },
+                      progressIndicatorBuilder: (context, url, progress) =>
+                          const Center(child: CircularProgressIndicator()),
+                    ),
+                  );
+                }
+                return content;
+              },
               childCount: nasfiles.length,
             ),
           ),

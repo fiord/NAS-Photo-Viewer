@@ -16,8 +16,22 @@ class ViewerPageBloc {
     this.path = '/',
   });
 
+  String getNasUrl() {
+    return httpRepository.getNasUrl();
+  }
+
+  String getNasCookie() {
+    final cookies = httpRepository.getCookies();
+    Logger().d(cookies.toString());
+    final ipCookie = cookies.entries.first.value;
+    final pathCookie = ipCookie.entries.first.value;
+    final webaxsSession = pathCookie.entries.first.value;
+    final cookie = webaxsSession.cookie;
+    return '${cookie.name}=${cookie.value}';
+  }
+
   Future<void> loadFiles(WidgetRef ref) async {
-    Logger().d("loadFiles called");
+    await httpRepository.init();
     final prevState = ref.read(nasFilesStateProvider).nasfiles;
     ref
         .read(nasFilesStateProvider.notifier)
@@ -29,9 +43,10 @@ class ViewerPageBloc {
       final List<dynamic> json = res.data;
       final nasfiles = json
           .map((e) => NasFile.fromJSON(e))
-          .where((e) => !['.', '..'].contains(e.name))
+          .where((e) => !['.', '..', '.webaxs'].contains(e.name))
           .toList();
-      Logger().d(nasfiles.map((e) => e.name));
+      nasfiles.sort((a, b) => (a.ctime - b.ctime));
+      // Logger().d(nasfiles.map((e) => e.name));
       ref
           .read(nasFilesStateProvider.notifier)
           .setState(NasFilesSuccess(nasfiles));

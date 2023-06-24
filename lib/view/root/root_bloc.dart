@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:nas_photo_viewer/config/config.dart';
+import 'package:nas_photo_viewer/model/nas_file.dart';
 import 'package:nas_photo_viewer/service/certification/certification_repository.dart';
 import 'package:nas_photo_viewer/service/http/http_repository.dart';
 import 'package:nas_photo_viewer/view/settings/settings_page.dart';
@@ -14,7 +15,25 @@ class RootPageBloc {
     required this.certificationRepository,
   });
 
+  Future<bool> _tryContinueCurrentSession() async {
+    final nasUrl = httpRepository.getNasUrl();
+    if (nasUrl == '') return false;
+    final url = '${nasUrl}rpc/ls/';
+    final res = await httpRepository.get(url);
+    final List<dynamic> json = res.data;
+    final nasfiles = json
+        .map((e) => NasFile.fromJSON(e))
+        .where((e) => !['.', '..', '.webaxs'].contains(e.name))
+        .toList();
+    Logger().d(nasfiles.map((e) => e.name).toString());
+    return nasfiles.isNotEmpty;
+  }
+
   Future<bool> _tryLogin() async {
+    // if my session is alive, use it.
+    if (await _tryContinueCurrentSession()) return true;
+
+    // try login and get session
     // buffalonas.com
     final certification = await certificationRepository.getCertification();
     final nasName = certification.nasName;
