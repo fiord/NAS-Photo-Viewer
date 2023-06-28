@@ -43,7 +43,7 @@ class HttpRepository {
     String appDocPath = appDocDir.path;
     _cookieJar =
         PersistCookieJar(storage: FileStorage('$appDocPath/.cookies/'));
-    Logger().d('save from response: ${_cookies.toString()}');
+    // Logger().d('save from response: ${_cookies.toString()}');
     _cookieJar.saveFromResponse(Uri.parse(getNasUrl()), _cookies);
     _dio.interceptors.add(CookieManager(_cookieJar));
   }

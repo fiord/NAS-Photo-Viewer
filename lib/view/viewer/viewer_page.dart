@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:nas_photo_viewer/model/nas_file.dart';
 import 'package:nas_photo_viewer/usecase/nas_files_state.dart';
 import 'package:nas_photo_viewer/view/image_detail/image_detail.dart';
@@ -47,12 +48,6 @@ class ViewerPageState extends ConsumerState<ViewerPage> {
             title: Text(widget.viewerPageBloc.path),
           ),
           SliverGrid(
-            // gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            //   crossAxisCount: 2,
-            //   mainAxisSpacing: 5,
-            //   crossAxisSpacing: 5,
-            //   childAspectRatio: 1.2,
-            // ),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 200,
               mainAxisSpacing: 3,
@@ -62,6 +57,7 @@ class ViewerPageState extends ConsumerState<ViewerPage> {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final nasfile = nasfiles[index];
+                Logger().d('nasfile name=${nasfile.path}');
                 Widget content;
                 if (nasfile.directory) {
                   content = Card(
@@ -86,7 +82,9 @@ class ViewerPageState extends ConsumerState<ViewerPage> {
                       ),
                     ),
                   );
-                } else {
+                } else if (nasfile.nasFileType == NasFileType.photo) {
+                  final thumbnail =
+                      '${widget.viewerPageBloc.getNasUrl()}rpc/cat';
                   final url = '${widget.viewerPageBloc.getNasUrl()}rpc/cat';
                   final cookie = widget.viewerPageBloc.getNasCookie();
                   content = InkWell(
@@ -101,12 +99,30 @@ class ViewerPageState extends ConsumerState<ViewerPage> {
                       );
                     },
                     child: CachedNetworkImage(
-                      imageUrl: '$url${nasfiles[index].path}',
+                      imageUrl: '$thumbnail${nasfile.path}',
                       httpHeaders: {
                         'Cookie': cookie,
                       },
                       progressIndicatorBuilder: (context, url, progress) =>
                           const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.error_outlined,
+                        size: 100,
+                      ),
+                    ),
+                  );
+                } else if (nasfile.nasFileType == NasFileType.video) {
+                  content = const Center(
+                    child: Icon(
+                      Icons.video_call_outlined,
+                      size: 100,
+                    ),
+                  );
+                } else {
+                  content = const Center(
+                    child: Icon(
+                      Icons.file_open,
+                      size: 100,
                     ),
                   );
                 }

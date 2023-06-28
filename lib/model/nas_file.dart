@@ -1,4 +1,24 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
+enum NasFileType {
+  photo,
+  video,
+  audio,
+  other,
+}
+
+NasFileType _nasFileTypeFromFileName(String filename) {
+  if (filename.toLowerCase().endsWith(".jpg") ||
+      filename.toLowerCase().endsWith(".jpeg") ||
+      filename.toLowerCase().endsWith(".png")) {
+    return NasFileType.photo;
+  } else if (filename.toLowerCase().endsWith(".mp4") ||
+      filename.toLowerCase().endsWith(".avi")) {
+    return NasFileType.video;
+  } else {
+    return NasFileType.other;
+  }
+}
 
 @immutable
 class NasFile {
@@ -10,6 +30,7 @@ class NasFile {
   final String path;
   final bool directory;
   final int size;
+  final NasFileType nasFileType;
 
   const NasFile({
     required this.ctime,
@@ -20,6 +41,7 @@ class NasFile {
     required this.path,
     required this.directory,
     required this.size,
+    required this.nasFileType,
   });
 
   Map<String, dynamic> get toJSON => {
@@ -34,15 +56,18 @@ class NasFile {
       };
 
   factory NasFile.fromJSON(Map<String, dynamic> json) {
+    final name = json['name'] ?? '';
+    final nasFileType = _nasFileTypeFromFileName(name);
     return NasFile(
       ctime: json['ctime'] ?? 0,
       mtime: json['mtime'] ?? 0,
       atime: json['atime'] ?? 0,
       writable: json['writable'] ?? false,
-      name: json['name'] ?? '',
+      name: name,
       path: json['path'] ?? '',
       directory: json['directory'] ?? false,
       size: json['size'] ?? 0,
+      nasFileType: nasFileType,
     );
   }
 }

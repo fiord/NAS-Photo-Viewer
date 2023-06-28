@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:nas_photo_viewer/model/nas_file.dart';
@@ -30,6 +32,32 @@ class ViewerPageBloc {
     return '${cookie.name}=${cookie.value}';
   }
 
+  Future<List<NasFile>> _loadFiles(WidgetRef ref, String path) async {
+    final List<NasFile> nasfiles = [];
+    final queue = ListQueue<String>();
+    queue.addLast(path);
+
+    while (queue.isNotEmpty) {
+      path = queue.removeFirst();
+      Logger().d(path);
+      final res =
+          await httpRepository.get('${httpRepository.getNasUrl()}rpc/ls$path');
+      final List<dynamic> json = res.data;
+      final resNasFiles = json
+          .map((e) => NasFile.fromJSON(e))
+          .where((e) => !['.', '..', '.webaxs', 'trashbox'].contains(e.name))
+          .toList();
+      for (final nasFile in resNasFiles) {
+        if (nasFile.directory) {
+          queue.addLast(nasFile.path);
+        } else if (nasFile.nasFileType != NasFileType.other) {
+          nasfiles.add(nasFile);
+        }
+      }
+    }
+    return nasfiles;
+  }
+
   Future<void> loadFiles(WidgetRef ref) async {
     await httpRepository.init();
     final prevState = ref.read(nasFilesStateProvider).nasfiles;
@@ -38,20 +66,15 @@ class ViewerPageBloc {
         .setState(NasFilesLoading(prevState));
     try {
       // load file
-      final res =
-          await httpRepository.get('${httpRepository.getNasUrl()}rpc/ls$path');
-      final List<dynamic> json = res.data;
-      final nasfiles = json
-          .map((e) => NasFile.fromJSON(e))
-          .where((e) => !['.', '..', '.webaxs'].contains(e.name))
-          .toList();
+      final nasfiles = await _loadFiles(ref, path);
       nasfiles.sort((a, b) => (a.ctime - b.ctime));
       // Logger().d(nasfiles.map((e) => e.name));
+      Logger().d("load completed");
       ref
           .read(nasFilesStateProvider.notifier)
           .setState(NasFilesSuccess(nasfiles));
-    } catch (e) {
-      Logger().e(e);
+    } catch (e, stackTrace) {
+      Logger().e("error", e, stackTrace);
       ref
           .read(nasFilesStateProvider.notifier)
           .setState(NasFilesFailure(prevState, e.toString()));
