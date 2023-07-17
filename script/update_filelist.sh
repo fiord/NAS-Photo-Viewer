@@ -15,6 +15,14 @@ for ext in ${exts[@]}; do
                 f=${list[i]}
                 mtime=`date -r "$f" "+%s"`
                 files+=("$mtime ${f#$base}")
+
+                # create 500x500 thumbnail image if not exist
+                dir=`dirname "$f"`
+                name=`basename "$f"`
+                thumbnail_path="$dir/.webaxs/thumbnail/$name.3L.jpg"
+                if [ ! -f "$thumbnail_path" ]; then
+                        /usr/local/webaxs/bin/mkthumbnail 500 500 "$f" "$thumbnail_path"
+                fi
         done
 done
 
