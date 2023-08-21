@@ -4,6 +4,7 @@ import 'package:nas_photo_viewer/data/secure_storage/secure_storage.dart';
 import 'package:nas_photo_viewer/model/nas_file.dart';
 import 'package:nas_photo_viewer/service/certification/certification_repository.dart';
 import 'package:nas_photo_viewer/service/http/http_repository.dart';
+import 'package:nas_photo_viewer/service/nasfiles/nasfiles_repository.dart';
 import 'package:nas_photo_viewer/view/image_detail/image_detail.dart';
 import 'package:nas_photo_viewer/view/root/root_bloc.dart';
 import 'package:nas_photo_viewer/view/root/root_page.dart';
@@ -16,11 +17,14 @@ void main() async {
   final secureStorage = SecureStorage();
   final certificationRepository = CertificationRepository(secureStorage);
   final httpRepository = HttpRepository();
+  final nasFilesRepository = NasFilesRepository();
+
   runApp(ProviderScope(
     child: App(
       secureStorage: secureStorage,
       certificationRepository: certificationRepository,
       httpRepository: httpRepository,
+      nasFilesRepository: nasFilesRepository,
     ),
   ));
 }
@@ -29,11 +33,14 @@ class App extends StatelessWidget {
   final SecureStorage secureStorage;
   final CertificationRepository certificationRepository;
   final HttpRepository httpRepository;
-  const App(
-      {super.key,
-      required this.secureStorage,
-      required this.certificationRepository,
-      required this.httpRepository});
+  final NasFilesRepository nasFilesRepository;
+  const App({
+    super.key,
+    required this.secureStorage,
+    required this.certificationRepository,
+    required this.httpRepository,
+    required this.nasFilesRepository,
+  });
 
   // This widget is the root of your application.
   @override
@@ -61,6 +68,7 @@ class App extends StatelessWidget {
           final path = (arg ?? '/') as String;
           final viewerPageBloc = ViewerPageBloc(
             httpRepository: httpRepository,
+            nasFilesRepository: nasFilesRepository,
             path: path,
           );
           return ViewerPage(

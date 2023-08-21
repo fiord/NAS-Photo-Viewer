@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 enum NasFileType {
   photo,
@@ -7,7 +8,7 @@ enum NasFileType {
   other,
 }
 
-NasFileType _nasFileTypeFromFileName(String filename) {
+NasFileType nasFileTypeFromFileName(String filename) {
   if (filename.toLowerCase().endsWith(".jpg") ||
       filename.toLowerCase().endsWith(".jpeg") ||
       filename.toLowerCase().endsWith(".png")) {
@@ -57,7 +58,7 @@ class NasFile {
 
   factory NasFile.fromJSON(Map<String, dynamic> json) {
     final name = json['name'] ?? '';
-    final nasFileType = _nasFileTypeFromFileName(name);
+    final nasFileType = nasFileTypeFromFileName(name);
     return NasFile(
       ctime: json['ctime'] ?? 0,
       mtime: json['mtime'] ?? 0,
@@ -69,5 +70,11 @@ class NasFile {
       size: json['size'] ?? 0,
       nasFileType: nasFileType,
     );
+  }
+
+  String getUpdatedDate() {
+    final date = DateTime.fromMillisecondsSinceEpoch(mtime * 1000);
+    final key = DateFormat('yyyy/MM/dd').format(date);
+    return key;
   }
 }

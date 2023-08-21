@@ -16,6 +16,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _nasNameField = TextEditingController();
   final TextEditingController _userNameField = TextEditingController();
   final TextEditingController _passwordField = TextEditingController();
+  final TextEditingController _pathField = TextEditingController();
 
   @override
   void initState() {
@@ -26,6 +27,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _nasNameField.text = cert.nasName;
       _userNameField.text = cert.userName;
       _passwordField.text = cert.password;
+      _pathField.text = cert.path;
     });
   }
 
@@ -63,15 +65,24 @@ class _SettingsPageState extends State<SettingsPage> {
                         labelText: 'password',
                       ),
                     ),
+                    TextFormField(
+                      controller: _pathField,
+                      decoration: const InputDecoration(
+                        labelText: 'path',
+                      ),
+                    ),
                     FilledButton(
                       onPressed: () async {
                         final nasName = _nasNameField.text;
                         final userName = _userNameField.text;
                         final password = _passwordField.text;
+                        final path = _pathField.text;
                         final cert = Certification(
-                            nasName: nasName,
-                            userName: userName,
-                            password: password);
+                          nasName: nasName,
+                          userName: userName,
+                          password: password,
+                          path: path,
+                        );
                         final res =
                             await widget.settingsPageBloc.saveSettings(cert);
                         if (res && context.mounted) {

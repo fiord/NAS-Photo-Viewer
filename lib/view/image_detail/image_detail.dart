@@ -22,6 +22,7 @@ class ImageDetailPage extends StatefulWidget {
 
 class _ImageDetailPageState extends State<ImageDetailPage> {
   late PageController _pageController;
+  late String _title;
 
   @override
   void initState() {
@@ -30,13 +31,16 @@ class _ImageDetailPageState extends State<ImageDetailPage> {
     _pageController = PageController(
       initialPage: widget.index,
     );
+    // final date = DateTime.fromMillisecondsSinceEpoch(
+    // widget.nasfiles[widget.index].mtime * 1000);
+    _title = widget.nasfiles[widget.index].name;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('test'),
+        title: Text(_title),
       ),
       body: PhotoViewGallery.builder(
         itemCount: widget.nasfiles.length,
@@ -50,6 +54,11 @@ class _ImageDetailPageState extends State<ImageDetailPage> {
         },
         loadingBuilder: (context, event) =>
             const Center(child: CircularProgressIndicator()),
+        onPageChanged: (index) {
+          setState(() {
+            _title = widget.nasfiles[index].name;
+          });
+        },
         pageController: _pageController,
       ),
     );

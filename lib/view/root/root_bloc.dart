@@ -57,13 +57,18 @@ class RootPageBloc {
     final password = certification.password;
     // NAS login
     final loginUri = Uri.parse('${httpRepository.getNasUrl()}rpc/login');
-    final loginResp = await httpRepository.post(loginUri, {
-      'user': userName,
-      'password': password,
-    });
-    if (loginResp.statusCode != 200) {
-      Logger().e(
-          'status code not correct in ${loginUri.toString()}, expected 200, but actual ${loginResp.statusCode}');
+    try {
+      final loginResp = await httpRepository.post(loginUri, {
+        'user': userName,
+        'password': password,
+      });
+      if (loginResp.statusCode != 200) {
+        Logger().e(
+            'status code not correct in ${loginUri.toString()}, expected 200, but actual ${loginResp.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      Logger().e(e);
       return false;
     }
     return true;
@@ -72,12 +77,12 @@ class RootPageBloc {
   Future<void> login(BuildContext context) async {
     // try login
     final result = await _tryLogin();
-    Logger().d("result: $result");
     if (result) {
+      final cert = await certificationRepository.getCertification();
       // navigate to folders
       if (context.mounted) {
         await Navigator.of(context)
-            .pushNamed(ViewerPage.routeName, arguments: '/');
+            .pushNamed(ViewerPage.routeName, arguments: cert.path);
       }
     } else {
       if (context.mounted) {
